@@ -21,8 +21,22 @@ else
     group="wheel"
 fi
 
+# Root or die
+if [ "$(id -u)" != "0" ]
+then
+  echo "You must be root to load or unload kernel modules"
+  exit 1
+fi
+
+kernel_ver=$(uname -r)
+module_dir="/lib/modules/$kernel_ver/updates"
+if [ ! -d "$module_dir" ]; then
+    echo "Module directory not found: $module_dir"
+    exit 1
+fi
+
 echo "Load our module, exit on failure"
-insmod ./$module.ko $* || exit 1
+insmod $module_dir/$module.ko $* || exit 1
 echo "Get the major number (allocated with allocate_chrdev_region) from /proc/devices"
 major=$(awk "\$2==\"$module\" {print \$1}" /proc/devices)
 if [ ! -z ${major} ]; then
